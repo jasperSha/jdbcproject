@@ -229,6 +229,47 @@ public class CECS323JavaTermProject {
         
     }
     
+    public static void queryBookData (Connection conn, String book) {
+        //query specific book
+        String displayFormat="%-25s%-25s%-12s%-15s\n";
+        try {
+            System.out.printf("Querying %s now...\n", book);
+            String stmt = "SELECT groupName, bookTitle, publisherName, yearPublished, numberPages FROM Books WHERE bookTitle = ?";
+            PreparedStatement pstmt = conn.prepareStatement(stmt);
+            pstmt.setString(1, book);
+
+
+            ResultSet rs = pstmt.executeQuery();
+            
+            //STEP 5: Extract data from result set
+            System.out.printf(displayFormat, "Group Name", "Title", "Publisher", "Publication Year", "Number of Pages");
+
+            while (rs.next()) {
+
+                    //Retrieve by column name
+                    String groupName = rs.getString("groupName");
+                    String title = rs.getString("bookTitle");
+                    String publisher = rs.getString("publisherName");
+                    int year = rs.getInt("yearPublished");
+                    int pages = rs.getInt("numberPages");
+
+                    //Display values
+                    System.out.printf(displayFormat, 
+                            dispNull(groupName), dispNull(title), dispNull(publisher), dispNull(year), dispNull(pages));
+                } 
+            
+            
+            rs.close();
+            pstmt.close();
+            
+        } catch (SQLException se) {
+            //Handle errors for JDBC
+            se.printStackTrace();
+        } 
+        
+   
+    }
+    
     
     
     

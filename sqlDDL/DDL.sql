@@ -42,3 +42,31 @@ create table Publishers (
 alter table Books
 ADD CONSTRAINT books_publishers_fk_02 FOREIGN KEY(publisherName)
     REFERENCES Publishers(publisherName);
+
+
+--DML statements
+
+insert into Publishers (publisherName, publisherAddress, publisherPhone, publisherEmail)
+VALUES  ('Scholastic Inc.', '557 Broadway New York', '(800) 724-6527', 'info@scholastic.com'),
+        ('Kids Corp', '2550 Hollywood Blvd', '(666)555-6666', 'evil@satan.com'),
+        ('Penguin International', '2222 Main Blvd', '(818)112-1111', 'angels@heaven.com'),
+        ('Climate Publishers', '111 Long Blvd', '(111)222-3333', 'pineapples@gmail.com'),
+        ('Farrell LLC', '839 Forster Lane', '(635)921-4342', 'astoeckl@mtv.com'),
+        ('Marks-Spinka', '16 Scott Point', '(424)768-9912', 'mgrace@buzzfeed.com');
+
+
+
+insert into WritingGroups (groupName, headWriter, yearFormed, subject)
+VALUES ('The Avengers', 'Cpt America', 1950, 'Adventures'),
+       ('Shield', 'Nick Fury', 1929, 'Espionage'),
+       ('The Hobbits', 'Tolkien', 1909, 'Fantasy'),
+       ('Top Gun', 'Tom Cruise', 1986, 'Science Fiction'),
+       ('Writing Dramatic', 'Ayn Rand', 1901, 'Non-Fiction'),
+       ('Expressions', 'John Connor', 1920, 'For Kids');
+
+insert into Books (groupName, bookTitle, publisherName, yearPublished, numberPages)
+VALUES ('The Avengers', 'Thief', 'Scholastic Inc.', 1990, 5000),
+       ('Shield', 'Pineapples', 'Kids Corp', 1955, 1000),
+       ('Top Gun', 'Flying High', 'Penguin International', 1940, 50),
+       ('Writing Dramatic', '6 Souls', 'Farrell LLC', 1990, 500),
+       ('Writing Dramatic', 'True Heart', 'Penguin International', 1941, 1000);
