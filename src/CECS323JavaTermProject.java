@@ -283,8 +283,55 @@ public class CECS323JavaTermProject {
    
     }
     
-    public static void insertBookTitle(Connection conn, String book, String publisher) {
-        
+    public static void insertBookData(Connection conn, Scanner scnr, String book, String publisher) {
+        String displayFormat="%-25s%-25s%-25s%-18s%-17s\n";
+        try {
+            
+            System.out.printf("\nChecking if %s published by %s is already in database...\n", book, publisher);
+            String stmt = "SELECT COUNT(*) FROM Books WHERE bookTitle = ? and publisherName = ?";
+            PreparedStatement pstmt = conn.prepareStatement(stmt);
+            pstmt.setString(1, book);
+            pstmt.setString(2, publisher);
+
+
+            ResultSet rs = pstmt.executeQuery();
+            
+            //STEP 5: Extract data from result set
+
+            if (rs.next()) {
+                    System.out.printf("The book %s published by %s already exists! No duplicates allowed.", book, publisher);
+                    pstmt.close();
+                    rs.close();
+                } else {
+                System.out.println("Looks great, please enter some more information"
+                        + "\nWriting Group Name: ");
+                String group = scnr.nextLine();
+                System.out.println("\nYear of Publication: ");
+                int year = scnr.nextInt();
+                System.out.println("\nNumber of Pages: ");
+                int pages = scnr.nextInt();
+                
+                stmt = "INSERT INTO Books (groupName, bookTitle, publisherName, yearPublished, numberPages) VALUES (?, ?, ?, ?, ?)";
+                pstmt = conn.prepareStatement(stmt);
+                pstmt.setString(1, group);
+                pstmt.setString(2, book);
+                pstmt.setString(3, publisher);
+                pstmt.setInt(4, year);
+                pstmt.setInt(5,pages);
+                
+                pstmt.executeUpdate();
+                
+                
+            }
+            
+            
+            rs.close();
+            pstmt.close();
+            
+        } catch (SQLException se) {
+            //Handle errors for JDBC
+            se.printStackTrace();
+        } 
     }
     
     
@@ -355,6 +402,11 @@ public class CECS323JavaTermProject {
                         break;
                     case 7:
                         System.out.println("Please enter a book title: ");
+                        book = scnr.nextLine();
+                        System.out.println("Enter publisher: ");
+                        publisher = scnr.nextLine();
+                        insertBookData(conn, scnr, book, publisher);
+                        break;
                     case 10: 
                         System.out.println("Shutting down.");
                         input = false;
