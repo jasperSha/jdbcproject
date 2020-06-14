@@ -45,7 +45,7 @@ public class CECS323JavaTermProject {
     }
     public static void queryPublisherData (Connection conn) {
         //list ALL publisher data
-        String displayFormat="%-25s%-25s%-15s%-20s\n";
+        String displayFormat="%-25s%-30s%-15s%-25s\n";
         try {
             Statement stmt = conn.createStatement();
             String sql = "SELECT publisherName, publisherAddress, publisherPhone, publisherEmail FROM Publishers";
@@ -83,7 +83,7 @@ public class CECS323JavaTermProject {
     
     public static void queryPublisherData (Connection conn, String publisher) {
         //list specific publisher data
-        String displayFormat="%-25s%-25s%-15s%-20s\n";
+        String displayFormat="%-25s%-30s%-15s%-25s\n";
         try {
             
             
@@ -129,7 +129,7 @@ public class CECS323JavaTermProject {
    
     public static void queryWritingGroups (Connection conn) {
         //list all writing groups
-        String displayFormat="%-25s%-25s%-12s%-15s\n";
+        String displayFormat="%-25s%-25s%-5s%-15s\n";
         try {
             
             Statement stmt = conn.createStatement();
@@ -168,7 +168,7 @@ public class CECS323JavaTermProject {
     
     public static void queryWritingGroups (Connection conn, String group) {
         //query specific writing group
-        String displayFormat="%-25s%-25s%-12s%-15s\n";
+        String displayFormat="%-25s%-25s%-5s%-15s\n";
         try {
             System.out.printf("Querying %s now...\n", group);
             String stmt = "SELECT groupName, headWriter, yearFormed, subject FROM WritingGroups WHERE groupName = ?";
@@ -210,7 +210,7 @@ public class CECS323JavaTermProject {
     
     public static void queryBookData (Connection conn) {
         //list ALL book data
-        String displayFormat="%-25s%-25s%-12s%-15s\n";
+        String displayFormat="%-25s%-25s%-25s%-4s%-5s\n";
         try {
             
             Statement stmt = conn.createStatement();
@@ -247,7 +247,8 @@ public class CECS323JavaTermProject {
     
     public static void queryBookData (Connection conn, String book, String publisher) {
         //query specific book
-        String displayFormat="%-25s%-25s%-25s%-18s%-17s\n";
+
+        String displayFormat="%-25s%-25s%-25s%-4s%-5s\n";
         try {
             System.out.printf("\nQuerying %s published by %s now...\n", book, publisher);
             String stmt = "SELECT groupName, bookTitle, publisherName, yearPublished, numberPages FROM Books WHERE bookTitle = ? and publisherName = ?";
@@ -289,27 +290,35 @@ public class CECS323JavaTermProject {
     
     public static boolean validatePublisher(Connection conn, String publisher) throws SQLException {
         
-        String stmt = "SELECT COUNT(*) FROM Publishers WHERE publisherName = ?";
+        String stmt = "SELECT COUNT(*) AS COUNT FROM Publishers WHERE publisherName = ?";
         PreparedStatement pstmt = conn.prepareStatement(stmt);
         pstmt.setString(1, publisher);
         ResultSet rs = pstmt.executeQuery();
-
-        if (rs.next())
-            return true;
-        else
-            return false;
+        if (rs.next()) {
+            int count = rs.getInt("COUNT");
+            if (count == 1)
+                return true;
+            else
+                return false;
+        }
+        return false;
    }
+    
     public static boolean validateGroup(Connection conn, String group) throws SQLException {
         
-        String stmt = "SELECT COUNT(*) FROM WritingGroups WHERE groupName = ?";
+        String stmt = "SELECT COUNT(*) AS COUNT FROM WritingGroups WHERE groupName = ?";
         PreparedStatement pstmt = conn.prepareStatement(stmt);
         pstmt.setString(1, group);
         ResultSet rs = pstmt.executeQuery();
-
-        if (rs.next())
-            return true;
-        else
-            return false;
+        
+        if (rs.next()) {
+            int count = rs.getInt("COUNT");
+            if (count == 1)
+                return true;
+            else
+                return false;
+        }
+        return false;
    }
     
     
@@ -317,57 +326,63 @@ public class CECS323JavaTermProject {
     public static void insertBookData(Connection conn, Scanner scnr, String book, String publisher, String group) throws SQLException {
         //publisher and writing group have been validated as existing, but
         //need to check both primary key(title, publisher) and unique constraint(title, group)
-        String displayFormat="%-25s%-25s%-25s%-18s%-17s\n";
         
-        //check unique constraint
-        String stmt = "SELECT COUNT(*) FROM Books WHERE bookTitle = ? and publisherName = ?";
+              
+        String stmt = "SELECT COUNT(*) AS COUNT FROM Books WHERE bookTitle = ? and publisherName = ?";
         PreparedStatement pstmt = conn.prepareStatement(stmt);
         pstmt.setString(1, book);
         pstmt.setString(2, publisher);
 
-
         ResultSet rs = pstmt.executeQuery();
-
+        
         if (rs.next()) {
+            int count = rs.getInt("COUNT");
+            if (count == 1) {
                 System.out.printf("\nThat particular book %s published by %s already exists! No duplicates allowed.", book, publisher);
                 pstmt.close();
                 rs.close();
             } else {
-            stmt = "SELECT COUNT(*) FROM Books WHERE bookTitle = ? and groupName = ?";
-            pstmt = conn.prepareStatement(stmt);
-            pstmt.setString(1, book);
-            pstmt.setString(2, group);
+                stmt = "SELECT COUNT(*) AS COUNT FROM Books WHERE bookTitle = ? and groupName = ?";
+                pstmt = conn.prepareStatement(stmt);
+                pstmt.setString(1, book);
+                pstmt.setString(2, group);
+                rs = pstmt.executeQuery();
+                
+                if (rs.next()) {
+                    count = rs.getInt("COUNT");
+                    if (count == 1) {
+                        System.out.printf("\nThe book %s already exists within the intellectual property of %s", book, group);
+                        pstmt.close();
+                        rs.close();
+                    } else {
+                        System.out.println("\nYear of Publication: ");
+                        int year = scnr.nextInt();
+                        System.out.println("\nNumber of Pages: ");
+                        int pages = scnr.nextInt();
+                        try {
+                        stmt = "INSERT INTO Books (groupName, bookTitle, publisherName, yearPublished, numberPages) VALUES (?, ?, ?, ?, ?)";
+                        pstmt = conn.prepareStatement(stmt);
+                        pstmt.setString(1, group);
+                        pstmt.setString(2, book);
+                        pstmt.setString(3, publisher);
+                        pstmt.setInt(4, year);
+                        pstmt.setInt(5, pages);
 
-            rs = pstmt.executeQuery();
-            if (rs.next()) {
-                System.out.printf("\nThe book %s already exists within the intellectual property of %s", book, group);
-                pstmt.close();
-                rs.close();
-            } else {
-            System.out.println("\nYear of Publication: ");
-            int year = scnr.nextInt();
-            System.out.println("\nNumber of Pages: ");
-            int pages = scnr.nextInt();
-            try {
-            stmt = "INSERT INTO Books (groupName, bookTitle, publisherName, yearPublished, numberPages) VALUES (?, ?, ?, ?, ?)";
-            pstmt = conn.prepareStatement(stmt);
-            pstmt.setString(1, group);
-            pstmt.setString(2, book);
-            pstmt.setString(3, publisher);
-            pstmt.setInt(4, year);
-            pstmt.setInt(5, pages);
+                        pstmt.executeUpdate();
+                        System.out.printf("%s, published by %s, written by %s, has been successfully recorded!", book, publisher, group);
+                        }
+                        catch (SQLException se) {
+                            System.out.print(se.getSQLState());
+                        }
+                        finally {
+                            rs.close();
+                            pstmt.close();
+                        }
 
-            pstmt.executeUpdate();
+
+                    }
+                }
             }
-            catch (SQLException se) {
-                System.out.print(se.getSQLState());
-            }
-            finally {
-                rs.close();
-                pstmt.close();
-            }
-
-
         }
 
 
@@ -375,7 +390,7 @@ public class CECS323JavaTermProject {
         pstmt.close();
             
         
-        }
+        
     }
     
     
@@ -413,6 +428,7 @@ public class CECS323JavaTermProject {
                         + "\n5) List all books"
                         + "\n6) Query specific book data"
                         + "\n7) Insert a new book"
+                        + "\n8) Insert a new publisher"
                         + "\n10) Quit");
                 int choice = scnr.nextInt();
                 scnr.nextLine(); //handles the carriage return bug of scanner
@@ -474,6 +490,8 @@ public class CECS323JavaTermProject {
                             System.out.println("Sorry, that publisher has not been recorded yet. Please insert that particular publisher first before attempting to record their published work.");
                             break;
                         }
+                    case 8:
+                        
                     case 10: 
                         System.out.println("Shutting down.");
                         input = false;
