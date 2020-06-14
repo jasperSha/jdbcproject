@@ -43,12 +43,13 @@ public class CECS323JavaTermProject {
         //list ALL publisher data
         String displayFormat="%-25s%-25s%-15s%-20s\n";
         try {
-            
             Statement stmt = conn.createStatement();
             String sql = "SELECT publisherName, publisherAddress, publisherPhone, publisherEmail FROM Publishers";
 
             ResultSet rs = stmt.executeQuery(sql);
             
+            
+                
             //STEP 5: Extract data from result set
             System.out.printf(displayFormat, "Name", "Address", "Phone", "Email");
 
@@ -64,10 +65,11 @@ public class CECS323JavaTermProject {
                     System.out.printf(displayFormat, 
                             dispNull(name), dispNull(address), dispNull(phone), dispNull(email));
                 } 
-
-
             rs.close();
             stmt.close();
+            
+            
+            
         } catch (SQLException se) {
             //Handle errors for JDBC
             se.printStackTrace();
@@ -81,7 +83,10 @@ public class CECS323JavaTermProject {
         try {
             
             
-            System.out.printf("Querying %s now...\n",publisher);
+            System.out.printf("\nQuerying %s now...",publisher);
+            
+            
+            
             String stmt = "SELECT publisherName, publisherAddress, publisherPhone, publisherEmail FROM Publishers  WHERE publisherName = ?";
             PreparedStatement pstmt = conn.prepareStatement(stmt);
             pstmt.setString(1, publisher);
@@ -89,21 +94,24 @@ public class CECS323JavaTermProject {
 
             ResultSet rs = pstmt.executeQuery();
             
-            //STEP 5: Extract data from result set
-            System.out.printf(displayFormat, "Name", "Address", "Phone", "Email");
+            
 
-            while (rs.next()) {
+            if (rs.next()) {
+                    //STEP 5: Extract data from result set
 
+                    System.out.printf(displayFormat, "Name", "Address", "Phone", "Email");
+                    
                     //Retrieve by column name
-                    String name = rs.getString("PUBLISHERNAME");
                     String address = rs.getString("PUBLISHERADDRESS");
                     String phone = rs.getString("PUBLISHERPHONE");
                     String email = rs.getString("PUBLISHEREMAIL");
 
                     //Display values
                     System.out.printf(displayFormat, 
-                            dispNull(name), dispNull(address), dispNull(phone), dispNull(email));
-                } 
+                            dispNull(publisher), dispNull(address), dispNull(phone), dispNull(email));
+                } else {
+                System.out.println("\nPublisher not found!");
+            }
 
 
             rs.close();
@@ -147,6 +155,8 @@ public class CECS323JavaTermProject {
         } catch (SQLException se) {
             //Handle errors for JDBC
             se.printStackTrace();
+            String state = se.getSQLState();
+            
         } 
         
    
@@ -165,20 +175,22 @@ public class CECS323JavaTermProject {
             ResultSet rs = pstmt.executeQuery();
             
             //STEP 5: Extract data from result set
-            System.out.printf(displayFormat, "Group Name", "Head Writer", "Year Formed", "Subject");
+            
 
-            while (rs.next()) {
-
+            if (rs.next()) {
+                
+                    System.out.printf(displayFormat, "Group Name", "Head Writer", "Year Formed", "Subject");
                     //Retrieve by column name
-                    String name = rs.getString("groupName");
                     String head = rs.getString("headWriter");
                     int year = rs.getInt("yearFormed");
                     String subject = rs.getString("subject");
 
                     //Display values
                     System.out.printf(displayFormat, 
-                            dispNull(name), dispNull(head), dispNull(year), dispNull(subject));
-                } 
+                            dispNull(group), dispNull(head), dispNull(year), dispNull(subject));
+                } else {
+                System.out.println("Writing Group not found!");
+            }
 
 
             rs.close();
@@ -229,34 +241,35 @@ public class CECS323JavaTermProject {
         
     }
     
-    public static void queryBookData (Connection conn, String book) {
+    public static void queryBookData (Connection conn, String book, String publisher) {
         //query specific book
-        String displayFormat="%-25s%-25s%-12s%-15s\n";
+        String displayFormat="%-25s%-25s%-25s%-18s%-17s\n";
         try {
-            System.out.printf("Querying %s now...\n", book);
-            String stmt = "SELECT groupName, bookTitle, publisherName, yearPublished, numberPages FROM Books WHERE bookTitle = ?";
+            System.out.printf("\nQuerying %s published by %s now...\n", book, publisher);
+            String stmt = "SELECT groupName, bookTitle, publisherName, yearPublished, numberPages FROM Books WHERE bookTitle = ? and publisherName = ?";
             PreparedStatement pstmt = conn.prepareStatement(stmt);
             pstmt.setString(1, book);
+            pstmt.setString(2, publisher);
 
 
             ResultSet rs = pstmt.executeQuery();
             
             //STEP 5: Extract data from result set
-            System.out.printf(displayFormat, "Group Name", "Title", "Publisher", "Publication Year", "Number of Pages");
 
-            while (rs.next()) {
+            if (rs.next()) {
+                    System.out.printf(displayFormat, "Group Name", "Title", "Publisher", "Publication Year", "Number of Pages");
 
                     //Retrieve by column name
                     String groupName = rs.getString("groupName");
-                    String title = rs.getString("bookTitle");
-                    String publisher = rs.getString("publisherName");
                     int year = rs.getInt("yearPublished");
                     int pages = rs.getInt("numberPages");
 
                     //Display values
                     System.out.printf(displayFormat, 
-                            dispNull(groupName), dispNull(title), dispNull(publisher), dispNull(year), dispNull(pages));
-                } 
+                            dispNull(groupName), dispNull(book), dispNull(publisher), dispNull(year), dispNull(pages));
+                } else {
+                System.out.printf("The book %s published by %s not found!", book, publisher);
+            }
             
             
             rs.close();
@@ -270,7 +283,9 @@ public class CECS323JavaTermProject {
    
     }
     
-    
+    public static void insertBookTitle(Connection conn, String book, String publisher) {
+        
+    }
     
     
     public static void main(String[] args) {
@@ -299,9 +314,12 @@ public class CECS323JavaTermProject {
             while (input) {
                 System.out.println("\nWhat would you like to do?"
                         + "\n1) List all writing groups"
-                        + "\n2) Query data for a specific writing group"
+                        + "\n2) Query specific writing group data"
                         + "\n3) List all publishers"
-                        + "\n4) Query publisher data"
+                        + "\n4) Query specific publisher data"
+                        + "\n5) List all books"
+                        + "\n6) Query specific book data"
+                        + "\n7) Insert a new book"
                         + "\n10) Quit");
                 int choice = scnr.nextInt();
                 scnr.nextLine(); //handles the carriage return bug of scanner
@@ -325,8 +343,18 @@ public class CECS323JavaTermProject {
                         String publisher = scnr.nextLine();
                         queryPublisherData(conn, publisher);
                         break;
-                            
-                            
+                    case 5:
+                        queryBookData(conn);
+                        break;
+                    case 6:
+                        System.out.println("Please enter the book title: ");
+                        String book = scnr.nextLine();
+                        System.out.println("Enter publisher: ");
+                        publisher = scnr.nextLine();
+                        queryBookData(conn, book, publisher);
+                        break;
+                    case 7:
+                        System.out.println("Please enter a book title: ");
                     case 10: 
                         System.out.println("Shutting down.");
                         input = false;
