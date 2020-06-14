@@ -39,6 +39,10 @@ public class CECS323JavaTermProject {
         else
             return Integer.toString(input);
     }
+    
+    public static boolean isConstraintViolation(SQLException se) {
+        return se.getSQLState().startsWith("23");
+    }
     public static void queryPublisherData (Connection conn) {
         //list ALL publisher data
         String displayFormat="%-25s%-25s%-15s%-20s\n";
@@ -283,55 +287,95 @@ public class CECS323JavaTermProject {
    
     }
     
-    public static void insertBookData(Connection conn, Scanner scnr, String book, String publisher) {
+    public static boolean validatePublisher(Connection conn, String publisher) throws SQLException {
+        
+        String stmt = "SELECT COUNT(*) FROM Publishers WHERE publisherName = ?";
+        PreparedStatement pstmt = conn.prepareStatement(stmt);
+        pstmt.setString(1, publisher);
+        ResultSet rs = pstmt.executeQuery();
+
+        if (rs.next())
+            return true;
+        else
+            return false;
+   }
+    public static boolean validateGroup(Connection conn, String group) throws SQLException {
+        
+        String stmt = "SELECT COUNT(*) FROM WritingGroups WHERE groupName = ?";
+        PreparedStatement pstmt = conn.prepareStatement(stmt);
+        pstmt.setString(1, group);
+        ResultSet rs = pstmt.executeQuery();
+
+        if (rs.next())
+            return true;
+        else
+            return false;
+   }
+    
+    
+    
+    public static void insertBookData(Connection conn, Scanner scnr, String book, String publisher, String group) throws SQLException {
+        //publisher and writing group have been validated as existing, but
+        //need to check both primary key(title, publisher) and unique constraint(title, group)
         String displayFormat="%-25s%-25s%-25s%-18s%-17s\n";
-        try {
-            
-            System.out.printf("\nChecking if %s published by %s is already in database...\n", book, publisher);
-            String stmt = "SELECT COUNT(*) FROM Books WHERE bookTitle = ? and publisherName = ?";
-            PreparedStatement pstmt = conn.prepareStatement(stmt);
+        
+        //check unique constraint
+        String stmt = "SELECT COUNT(*) FROM Books WHERE bookTitle = ? and publisherName = ?";
+        PreparedStatement pstmt = conn.prepareStatement(stmt);
+        pstmt.setString(1, book);
+        pstmt.setString(2, publisher);
+
+
+        ResultSet rs = pstmt.executeQuery();
+
+        if (rs.next()) {
+                System.out.printf("\nThat particular book %s published by %s already exists! No duplicates allowed.", book, publisher);
+                pstmt.close();
+                rs.close();
+            } else {
+            stmt = "SELECT COUNT(*) FROM Books WHERE bookTitle = ? and groupName = ?";
+            pstmt = conn.prepareStatement(stmt);
             pstmt.setString(1, book);
-            pstmt.setString(2, publisher);
+            pstmt.setString(2, group);
 
-
-            ResultSet rs = pstmt.executeQuery();
-            
-            //STEP 5: Extract data from result set
-
+            rs = pstmt.executeQuery();
             if (rs.next()) {
-                    System.out.printf("The book %s published by %s already exists! No duplicates allowed.", book, publisher);
-                    pstmt.close();
-                    rs.close();
-                } else {
-                System.out.println("Looks great, please enter some more information"
-                        + "\nWriting Group Name: ");
-                String group = scnr.nextLine();
-                System.out.println("\nYear of Publication: ");
-                int year = scnr.nextInt();
-                System.out.println("\nNumber of Pages: ");
-                int pages = scnr.nextInt();
-                
-                stmt = "INSERT INTO Books (groupName, bookTitle, publisherName, yearPublished, numberPages) VALUES (?, ?, ?, ?, ?)";
-                pstmt = conn.prepareStatement(stmt);
-                pstmt.setString(1, group);
-                pstmt.setString(2, book);
-                pstmt.setString(3, publisher);
-                pstmt.setInt(4, year);
-                pstmt.setInt(5,pages);
-                
-                pstmt.executeUpdate();
-                
-                
+                System.out.printf("\nThe book %s already exists within the intellectual property of %s", book, group);
+                pstmt.close();
+                rs.close();
+            } else {
+            System.out.println("\nYear of Publication: ");
+            int year = scnr.nextInt();
+            System.out.println("\nNumber of Pages: ");
+            int pages = scnr.nextInt();
+            try {
+            stmt = "INSERT INTO Books (groupName, bookTitle, publisherName, yearPublished, numberPages) VALUES (?, ?, ?, ?, ?)";
+            pstmt = conn.prepareStatement(stmt);
+            pstmt.setString(1, group);
+            pstmt.setString(2, book);
+            pstmt.setString(3, publisher);
+            pstmt.setInt(4, year);
+            pstmt.setInt(5, pages);
+
+            pstmt.executeUpdate();
             }
+            catch (SQLException se) {
+                System.out.print(se.getSQLState());
+            }
+            finally {
+                rs.close();
+                pstmt.close();
+            }
+
+
+        }
+
+
+        rs.close();
+        pstmt.close();
             
-            
-            rs.close();
-            pstmt.close();
-            
-        } catch (SQLException se) {
-            //Handle errors for JDBC
-            se.printStackTrace();
-        } 
+        
+        }
     }
     
     
@@ -358,6 +402,8 @@ public class CECS323JavaTermProject {
             
             //testing publisher query with user input
             Boolean input = true;
+            
+            
             while (input) {
                 System.out.println("\nWhat would you like to do?"
                         + "\n1) List all writing groups"
@@ -371,42 +417,63 @@ public class CECS323JavaTermProject {
                 int choice = scnr.nextInt();
                 scnr.nextLine(); //handles the carriage return bug of scanner
                 switch (choice) {
-                    case 1: 
+                    case 1: //list all groups
                         queryWritingGroups(conn);
                         break;
                         
-                    case 2: 
+                    case 2: //query specific group
                         System.out.println("Enter name of Writing Group");
                         String group = scnr.nextLine();
                         queryWritingGroups(conn, group);
                         break;
                         
-                    case 3:
+                    case 3: //list all publishers
                         queryPublisherData(conn);
                         break;
                         
-                    case 4: 
+                    case 4: //query specific publisher
                         System.out.println("Please enter the name of the publisher");
                         String publisher = scnr.nextLine();
                         queryPublisherData(conn, publisher);
                         break;
-                    case 5:
+                    case 5: //list all books
                         queryBookData(conn);
                         break;
-                    case 6:
-                        System.out.println("Please enter the book title: ");
-                        String book = scnr.nextLine();
-                        System.out.println("Enter publisher: ");
-                        publisher = scnr.nextLine();
-                        queryBookData(conn, book, publisher);
-                        break;
-                    case 7:
+                    
+                    case 6: //query specific book
+                        //check if book title is duplicate
                         System.out.println("Please enter a book title: ");
-                        book = scnr.nextLine();
+                        String book = scnr.nextLine();
+                        
+                        //enter publisher first, check if its a valid publisher
                         System.out.println("Enter publisher: ");
                         publisher = scnr.nextLine();
-                        insertBookData(conn, scnr, book, publisher);
-                        break;
+                        if (validatePublisher(conn, publisher)) {
+                            queryBookData(conn, book, publisher);
+                            break;
+                        } else {
+                            System.out.println("Sorry that publisher isn't in our records. Please record that Publisher first.");
+                            break;
+                        }
+                    case 7: //insert a book
+                        System.out.println("Please enter the name of the publisher: ");
+                        publisher = scnr.nextLine();
+                        if (validatePublisher(conn, publisher)) {
+                            System.out.println("Please enter the Writing Group name: ");
+                            group = scnr.nextLine();
+                            if (validateGroup(conn, group)) {
+                                System.out.println("Please enter the book title: ");
+                                book = scnr.nextLine();
+                                insertBookData(conn, scnr, book, publisher, group);
+                                break;
+                            } else {
+                                System.out.println("Sorry, that Writing Group does not exist. Please record the Writing Group first.");
+                                break;
+                            }
+                        } else {
+                            System.out.println("Sorry, that publisher has not been recorded yet. Please insert that particular publisher first before attempting to record their published work.");
+                            break;
+                        }
                     case 10: 
                         System.out.println("Shutting down.");
                         input = false;
