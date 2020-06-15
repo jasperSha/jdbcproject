@@ -45,29 +45,27 @@ public class CECS323JavaTermProject {
     }
     public static void queryPublisherData (Connection conn) {
         //list ALL publisher data
-        String displayFormat="%-25s%-30s%-15s%-25s\n";
+        String displayFormat="%-25s\n";
         try {
             Statement stmt = conn.createStatement();
-            String sql = "SELECT publisherName, publisherAddress, publisherPhone, publisherEmail FROM Publishers";
+            String sql = "SELECT publisherName FROM Publishers";
 
             ResultSet rs = stmt.executeQuery(sql);
             
             
                 
             //STEP 5: Extract data from result set
-            System.out.printf(displayFormat, "Name", "Address", "Phone", "Email");
+            System.out.printf(displayFormat, "Publisher Name");
 
             while (rs.next()) {
 
                     //Retrieve by column name
                     String name = rs.getString("PUBLISHERNAME");
-                    String address = rs.getString("PUBLISHERADDRESS");
-                    String phone = rs.getString("PUBLISHERPHONE");
-                    String email = rs.getString("PUBLISHEREMAIL");
+                    
 
                     //Display values
                     System.out.printf(displayFormat, 
-                            dispNull(name), dispNull(address), dispNull(phone), dispNull(email));
+                            dispNull(name));
                 } 
             rs.close();
             stmt.close();
@@ -87,7 +85,7 @@ public class CECS323JavaTermProject {
         try {
             
             
-            System.out.printf("\nQuerying %s now...",publisher);
+            System.out.printf("Querying %s now...\n",publisher);
             
             
             
@@ -129,28 +127,26 @@ public class CECS323JavaTermProject {
    
     public static void queryWritingGroups (Connection conn) {
         //list all writing groups
-        String displayFormat="%-20s%-18s%-15s%-15s\n";
+        String displayFormat="%-20s\n";
         try {
             
             Statement stmt = conn.createStatement();
-            String sql = "SELECT groupName, headWriter, yearFormed, subject FROM WritingGroups";
+            String sql = "SELECT groupName FROM WritingGroups";
             
             ResultSet rs = stmt.executeQuery(sql);
             
             //STEP 5: Extract data from result set
-            System.out.printf(displayFormat, "Group Name", "Headwriter", "Year Formed", "Subject");
+            System.out.printf(displayFormat, "Writing Group Name");
 
             while (rs.next()) {
 
                     //Retrieve by column name
                     String name = rs.getString("groupName");
-                    String head = rs.getString("headWriter");
-                    int year = rs.getInt("yearFormed");
-                    String subject = rs.getString("subject");
+                    
 
                     //Display values
                     System.out.printf(displayFormat, 
-                            dispNull(name), dispNull(head), dispNull(year), dispNull(subject));
+                            dispNull(name));
                 } 
 
 
@@ -210,29 +206,26 @@ public class CECS323JavaTermProject {
     
     public static void queryBookData (Connection conn) {
         //list ALL book data
-        String displayFormat="%-25s%-25s%-20s%-20s%-10s\n";
+        String displayFormat="%-25s%-25s\n";
         try {
             
             Statement stmt = conn.createStatement();
-            String sql = "SELECT groupName, bookTitle, publisherName, yearPublished, numberPages FROM Books";
+            String sql = "SELECT bookTitle, publisherName FROM Books";
             
             ResultSet rs = stmt.executeQuery(sql);
             
             //STEP 5: Extract data from result set
-            System.out.printf(displayFormat, "Book Title", "Group Name", "Publisher", "Publication Year", "Number of Pages");
+            System.out.printf(displayFormat, "Book Title", "Published By");
 
             while (rs.next()) {
 
                     //Retrieve by column name
-                    String groupName = rs.getString("groupName");
                     String title = rs.getString("bookTitle");
                     String publisher = rs.getString("publisherName");
-                    int year = rs.getInt("yearPublished");
-                    int pages = rs.getInt("numberPages");
-
+                    
                     //Display values
                     System.out.printf(displayFormat, 
-                            dispNull(title), dispNull(groupName), dispNull(publisher), dispNull(year), dispNull(pages));
+                            dispNull(title), dispNull(publisher));
                 } 
 
 
@@ -250,6 +243,8 @@ public class CECS323JavaTermProject {
 
         String displayFormat="%-25s%-25s%-20s%-20s%-10s\n";
         try {
+            
+          
             System.out.printf("\nQuerying %s published by %s now...\n", book, publisher);
             String stmt = "SELECT groupName, bookTitle, publisherName, yearPublished, numberPages FROM Books WHERE bookTitle = ? and publisherName = ?";
             PreparedStatement pstmt = conn.prepareStatement(stmt);
@@ -286,6 +281,46 @@ public class CECS323JavaTermProject {
         } 
         
    
+    }
+    
+    public static boolean removeBook(Connection conn, String book, String publisher) throws SQLException {
+        String stmt = "SELECT COUNT(*) AS COUNT FROM Books WHERE bookTitle = ?";
+        PreparedStatement pstmt = conn.prepareStatement(stmt);
+        pstmt.setString(1, book);
+        ResultSet rs = pstmt.executeQuery();
+        
+        if (rs.next()) {
+            int count = rs.getInt("COUNT");
+            if (count == 1) {
+                stmt = "DELETE FROM Books WHERE bookTitle = ? and publisherName = ?";
+                pstmt = conn.prepareStatement(stmt);
+                pstmt.setString(1, book);
+                pstmt.setString(2, book);
+                
+                pstmt.executeUpdate();
+                return true;
+            } else
+                return false;
+        }
+        return false;
+        
+        
+    }
+    
+    public static boolean validateBook(Connection conn, String book, String publisher) throws SQLException {
+        String stmt = "SELECT COUNT(*) AS COUNT FROM Books WHERE bookTitle = ? and publisherName = ?";
+        PreparedStatement pstmt = conn.prepareStatement(stmt);
+        pstmt.setString(1, book);
+        pstmt.setString(2, publisher);
+        ResultSet rs = pstmt.executeQuery();
+        if (rs.next()) {
+            int count = rs.getInt("COUNT");
+            if (count == 1)
+                return true;
+            else
+                return false;
+        }
+        return false;
     }
     
     public static boolean validatePublisher(Connection conn, String publisher) throws SQLException {
@@ -472,6 +507,7 @@ public class CECS323JavaTermProject {
                         + "\n6) Query specific book data"
                         + "\n7) Insert a new book"
                         + "\n8) Insert a new publisher to replace an old one"
+                        + "\n9) Remove a book"
                         + "\n10) Quit");
                 int choice = scnr.nextInt();
                 scnr.nextLine(); //handles the carriage return bug of scanner
@@ -500,16 +536,22 @@ public class CECS323JavaTermProject {
                         break;
                     
                     case 6: //query specific book
-                        //check if book title is duplicate
-                        System.out.println("Please enter a book title: ");
-                        book = scnr.nextLine();
-                        
+                                                
                         //enter publisher first, check if its a valid publisher
                         System.out.println("Enter publisher: ");
                         publisher = scnr.nextLine();
                         if (validatePublisher(conn, publisher)) {
-                            queryBookData(conn, book, publisher);
-                            break;
+                            //check if book title is valid or duplicate
+                            System.out.println("Please enter a book title: ");
+                            book = scnr.nextLine();
+                            if (validateBook(conn, book, publisher)) {
+                                queryBookData(conn, book, publisher);
+                                break;
+                            } else {
+                                System.out.printf("Sorry, a book by the title of %s published by %s does not exist in our database.", book, publisher);
+                                break;
+                            }
+                            
                         } else {
                             System.out.println("Sorry that publisher isn't in our records. Please record that Publisher first.");
                             break;
@@ -551,14 +593,31 @@ public class CECS323JavaTermProject {
                             System.out.println("Sorry, that publisher is not in our database!");
                             break;
                         }
-                        
+                    
+                    case 9:
+                        System.out.println("First enter the publisher of the book you would like to remove: ");
+                        publisher = scnr.nextLine();
+                        if (validatePublisher(conn, publisher)) {
+                            System.out.println("Please enter the name of the book you wish to remove: ");
+                            book = scnr.nextLine();
+                            if (removeBook(conn, book, publisher)) {
+                                System.out.printf("\nThe book %s published by %s has been successfully deleted!", book, publisher);
+                                break;
+                            } else {
+                                System.out.printf("\nSorry, we have no records of %s, published by %s in our database.", book, publisher);
+                            }
+                            
+                        } else {
+                            System.out.println("Unfortunately that publisher is not in our database.");
+                            break;
+                        }
                     case 10: 
                         System.out.println("Shutting down.");
                         input = false;
                         break;
                         
                     default: 
-                        System.out.println("Invalid input, please enter an integer");
+                        System.out.println("Invalid input, please enter one of the menu choices as an integer");
                     
 
                 }
