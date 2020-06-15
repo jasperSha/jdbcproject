@@ -206,26 +206,27 @@ public class CECS323JavaTermProject {
     
     public static void queryBookData (Connection conn) {
         //list ALL book data
-        String displayFormat="%-25s%-25s\n";
+        String displayFormat="%-25s%-25s%-25s\n";
         try {
             
             Statement stmt = conn.createStatement();
-            String sql = "SELECT bookTitle, publisherName FROM Books";
+            String sql = "SELECT bookTitle, publisherName, groupName FROM Books";
             
             ResultSet rs = stmt.executeQuery(sql);
             
             //STEP 5: Extract data from result set
-            System.out.printf(displayFormat, "Book Title", "Published By");
+            System.out.printf(displayFormat, "Book Title", "Published By", "Written By");
 
             while (rs.next()) {
 
                     //Retrieve by column name
                     String title = rs.getString("bookTitle");
                     String publisher = rs.getString("publisherName");
+                    String group = rs.getString("groupName");
                     
                     //Display values
                     System.out.printf(displayFormat, 
-                            dispNull(title), dispNull(publisher));
+                            dispNull(title), dispNull(publisher), dispNull(group));
                 } 
 
 
