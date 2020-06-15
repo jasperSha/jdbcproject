@@ -428,17 +428,6 @@ public class CECS323JavaTermProject {
         
     }
     
-    
-    /*
-    insert into Publishers (publisherName, publisherAddress, publisherPhone, publisherEmail)
-    VALUES ('Testing Inc.', '111 Lane Lane', '(123)456-1991', 'testing@gmail.com');
-
-    update books
-    set books.publishername = 'Testing Inc.'
-    where books.PUBLISHERNAME = 'Penguin International';
-
-    select * from books;
-    */
     public static void insertPublisher(Connection conn, Scanner scnr, String publisher, String oldpublisher) throws SQLException {
             
             System.out.println("\nPlease enter the publisher address: ");
