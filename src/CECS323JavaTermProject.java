@@ -129,7 +129,7 @@ public class CECS323JavaTermProject {
    
     public static void queryWritingGroups (Connection conn) {
         //list all writing groups
-        String displayFormat="%-25s%-25s%-5s%-15s\n";
+        String displayFormat="%-20s%-18s%-15s%-15s\n";
         try {
             
             Statement stmt = conn.createStatement();
@@ -168,7 +168,7 @@ public class CECS323JavaTermProject {
     
     public static void queryWritingGroups (Connection conn, String group) {
         //query specific writing group
-        String displayFormat="%-25s%-25s%-5s%-15s\n";
+        String displayFormat="%-20s%-18s%-15s%-15s\n";
         try {
             System.out.printf("Querying %s now...\n", group);
             String stmt = "SELECT groupName, headWriter, yearFormed, subject FROM WritingGroups WHERE groupName = ?";
@@ -210,7 +210,7 @@ public class CECS323JavaTermProject {
     
     public static void queryBookData (Connection conn) {
         //list ALL book data
-        String displayFormat="%-25s%-25s%-25s%-4s%-5s\n";
+        String displayFormat="%-25s%-25s%-20s%-20s%-10s\n";
         try {
             
             Statement stmt = conn.createStatement();
@@ -219,7 +219,7 @@ public class CECS323JavaTermProject {
             ResultSet rs = stmt.executeQuery(sql);
             
             //STEP 5: Extract data from result set
-            System.out.printf(displayFormat, "Group Name", "Title", "Publisher", "Publication Year", "Number of Pages");
+            System.out.printf(displayFormat, "Book Title", "Group Name", "Publisher", "Publication Year", "Number of Pages");
 
             while (rs.next()) {
 
@@ -232,7 +232,7 @@ public class CECS323JavaTermProject {
 
                     //Display values
                     System.out.printf(displayFormat, 
-                            dispNull(groupName), dispNull(title), dispNull(publisher), dispNull(year), dispNull(pages));
+                            dispNull(title), dispNull(groupName), dispNull(publisher), dispNull(year), dispNull(pages));
                 } 
 
 
@@ -248,7 +248,7 @@ public class CECS323JavaTermProject {
     public static void queryBookData (Connection conn, String book, String publisher) {
         //query specific book
 
-        String displayFormat="%-25s%-25s%-25s%-4s%-5s\n";
+        String displayFormat="%-25s%-25s%-20s%-20s%-10s\n";
         try {
             System.out.printf("\nQuerying %s published by %s now...\n", book, publisher);
             String stmt = "SELECT groupName, bookTitle, publisherName, yearPublished, numberPages FROM Books WHERE bookTitle = ? and publisherName = ?";
@@ -262,7 +262,7 @@ public class CECS323JavaTermProject {
             //STEP 5: Extract data from result set
 
             if (rs.next()) {
-                    System.out.printf(displayFormat, "Group Name", "Title", "Publisher", "Publication Year", "Number of Pages");
+                    System.out.printf(displayFormat, "Book Title","Group Name", "Publisher", "Publication Year", "Number of Pages");
 
                     //Retrieve by column name
                     String groupName = rs.getString("groupName");
@@ -271,7 +271,7 @@ public class CECS323JavaTermProject {
 
                     //Display values
                     System.out.printf(displayFormat, 
-                            dispNull(groupName), dispNull(book), dispNull(publisher), dispNull(year), dispNull(pages));
+                            dispNull(book), dispNull(groupName), dispNull(publisher), dispNull(year), dispNull(pages));
                 } else {
                 System.out.printf("The book %s published by %s not found!", book, publisher);
             }
@@ -360,16 +360,16 @@ public class CECS323JavaTermProject {
                         System.out.println("\nNumber of Pages: ");
                         int pages = scnr.nextInt();
                         try {
-                        stmt = "INSERT INTO Books (groupName, bookTitle, publisherName, yearPublished, numberPages) VALUES (?, ?, ?, ?, ?)";
-                        pstmt = conn.prepareStatement(stmt);
-                        pstmt.setString(1, group);
-                        pstmt.setString(2, book);
-                        pstmt.setString(3, publisher);
-                        pstmt.setInt(4, year);
-                        pstmt.setInt(5, pages);
+                            stmt = "INSERT INTO Books (groupName, bookTitle, publisherName, yearPublished, numberPages) VALUES (?, ?, ?, ?, ?)";
+                            pstmt = conn.prepareStatement(stmt);
+                            pstmt.setString(1, group);
+                            pstmt.setString(2, book);
+                            pstmt.setString(3, publisher);
+                            pstmt.setInt(4, year);
+                            pstmt.setInt(5, pages);
 
-                        pstmt.executeUpdate();
-                        System.out.printf("%s, published by %s, written by %s, has been successfully recorded!", book, publisher, group);
+                            pstmt.executeUpdate();
+                            System.out.printf("%s, published by %s, written by %s, has been successfully recorded!", book, publisher, group);
                         }
                         catch (SQLException se) {
                             System.out.print(se.getSQLState());
@@ -390,6 +390,49 @@ public class CECS323JavaTermProject {
         pstmt.close();
             
         
+        
+    }
+    
+    
+    /*
+    insert into Publishers (publisherName, publisherAddress, publisherPhone, publisherEmail)
+    VALUES ('Testing Inc.', '111 Lane Lane', '(123)456-1991', 'testing@gmail.com');
+
+    update books
+    set books.publishername = 'Testing Inc.'
+    where books.PUBLISHERNAME = 'Penguin International';
+
+    select * from books;
+    */
+    public static void insertPublisher(Connection conn, Scanner scnr, String publisher, String oldpublisher) throws SQLException {
+            
+            System.out.println("\nPlease enter the publisher address: ");
+            String address = scnr.nextLine();
+            System.out.println("\nPlease enter the publisher phone: ");
+            String phone = scnr.nextLine();
+            System.out.println("\nPlease enter the publisher email: ");
+            String email = scnr.nextLine();
+            
+            
+            String stmt = "INSERT INTO Publishers (publisherName, publisherAddress, publisherPhone, publisherEmail) VALUES (?, ?, ?, ?)";
+            PreparedStatement pstmt = conn.prepareStatement(stmt);
+            pstmt.setString(1, publisher);
+            pstmt.setString(2, address);
+            pstmt.setString(3, phone);
+            pstmt.setString(4, email);
+            pstmt.executeUpdate();
+            System.out.printf("\n%s has been successfully recorded!", publisher);
+            System.out.printf("\nNow updating %s's book ownership to %s", oldpublisher, publisher);
+            
+            stmt = "UPDATE Books SET Books.publisherName = ? WHERE books.publisherName = ?";
+            pstmt = conn.prepareStatement(stmt);
+            pstmt.setString(1, publisher);
+            pstmt.setString(2, oldpublisher);
+            pstmt.executeUpdate();
+            
+            System.out.printf("\nAll of the books belonging to %s are now considered the intellectual property of %s! Have a nice day!", oldpublisher, publisher);
+            
+            pstmt.close();
         
     }
     
@@ -417,7 +460,7 @@ public class CECS323JavaTermProject {
             
             //testing publisher query with user input
             Boolean input = true;
-            
+            String publisher, book, group;
             
             while (input) {
                 System.out.println("\nWhat would you like to do?"
@@ -428,7 +471,7 @@ public class CECS323JavaTermProject {
                         + "\n5) List all books"
                         + "\n6) Query specific book data"
                         + "\n7) Insert a new book"
-                        + "\n8) Insert a new publisher"
+                        + "\n8) Insert a new publisher to replace an old one"
                         + "\n10) Quit");
                 int choice = scnr.nextInt();
                 scnr.nextLine(); //handles the carriage return bug of scanner
@@ -439,7 +482,7 @@ public class CECS323JavaTermProject {
                         
                     case 2: //query specific group
                         System.out.println("Enter name of Writing Group");
-                        String group = scnr.nextLine();
+                        group = scnr.nextLine();
                         queryWritingGroups(conn, group);
                         break;
                         
@@ -449,7 +492,7 @@ public class CECS323JavaTermProject {
                         
                     case 4: //query specific publisher
                         System.out.println("Please enter the name of the publisher");
-                        String publisher = scnr.nextLine();
+                        publisher = scnr.nextLine();
                         queryPublisherData(conn, publisher);
                         break;
                     case 5: //list all books
@@ -459,7 +502,7 @@ public class CECS323JavaTermProject {
                     case 6: //query specific book
                         //check if book title is duplicate
                         System.out.println("Please enter a book title: ");
-                        String book = scnr.nextLine();
+                        book = scnr.nextLine();
                         
                         //enter publisher first, check if its a valid publisher
                         System.out.println("Enter publisher: ");
@@ -471,6 +514,7 @@ public class CECS323JavaTermProject {
                             System.out.println("Sorry that publisher isn't in our records. Please record that Publisher first.");
                             break;
                         }
+                        
                     case 7: //insert a book
                         System.out.println("Please enter the name of the publisher: ");
                         publisher = scnr.nextLine();
@@ -490,7 +534,23 @@ public class CECS323JavaTermProject {
                             System.out.println("Sorry, that publisher has not been recorded yet. Please insert that particular publisher first before attempting to record their published work.");
                             break;
                         }
-                    case 8:
+                    case 8: //insert a new publisher, updating old one
+                        System.out.println("Please enter the name of the OLD publisher: ");
+                        String oldpublisher = scnr.nextLine();
+                        if (validatePublisher(conn, oldpublisher)) { //if old publisher is in database, continue
+                            System.out.println("Please enter the name of the NEW publisher to be inserted: ");
+                            publisher = scnr.nextLine();
+                            if (!validatePublisher(conn, publisher)) { //checking if new publisher is in database. if it is not, we go ahead, otherwise, its a duplicate
+                                insertPublisher(conn, scnr, publisher, oldpublisher);
+                                break;
+                            } else {
+                                System.out.println("Sorry, that publisher is already in our database.");
+                                break;
+                            }
+                        } else {
+                            System.out.println("Sorry, that publisher is not in our database!");
+                            break;
+                        }
                         
                     case 10: 
                         System.out.println("Shutting down.");
