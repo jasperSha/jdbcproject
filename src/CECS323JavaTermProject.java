@@ -284,7 +284,7 @@ public class CECS323JavaTermProject {
    
     }
     
-    public static boolean removeBook(Connection conn, String book, String publisher) throws SQLException {
+    public static void removeBook(Connection conn, String book, String publisher) throws SQLException {
         String stmt = "SELECT COUNT(*) AS COUNT FROM Books WHERE bookTitle = ?";
         PreparedStatement pstmt = conn.prepareStatement(stmt);
         pstmt.setString(1, book);
@@ -292,18 +292,31 @@ public class CECS323JavaTermProject {
         
         if (rs.next()) {
             int count = rs.getInt("COUNT");
-            if (count == 1) {
-                stmt = "DELETE FROM Books WHERE bookTitle = ? and publisherName = ?";
+            if (count != 0) {
+                stmt = "SELECT COUNT(*) AS COUNT FROM Books WHERE bookTitle = ? and publisherName = ?";
                 pstmt = conn.prepareStatement(stmt);
                 pstmt.setString(1, book);
-                pstmt.setString(2, book);
+                pstmt.setString(2, publisher);
+                rs = pstmt.executeQuery();
+                if (rs.next()) {
+                    count = rs.getInt("COUNT");
+                    if (count == 1) {
+                        stmt = "DELETE FROM Books WHERE bookTitle = ? and publisherName = ?";
+                        pstmt = conn.prepareStatement(stmt);
+                        pstmt.setString(1, book);
+                        pstmt.setString(2, book);
+
+                        pstmt.executeUpdate();
+                        System.out.printf("\nSuccessfully deleted the book %s published by %s from our records!", book, publisher);
+                    } else {
+                        
+                    }
+                }
                 
-                pstmt.executeUpdate();
-                return true;
             } else
-                return false;
+                System.out.printf("\nUnfortunately there is no book by the title %s in our records", book);
         }
-        return false;
+        
         
         
     }
@@ -317,7 +330,7 @@ public class CECS323JavaTermProject {
         ResultSet rs = pstmt.executeQuery();
         if (rs.next()) {
             int count = rs.getInt("COUNT");
-            if (count==1)
+            if (count!=0)
                 return true;
             else
                 return false;
@@ -524,7 +537,7 @@ public class CECS323JavaTermProject {
                         break;
                         
                     case 2: //query specific group
-                        System.out.println("Enter name of Writing Group");
+                        System.out.println("\nEnter name of Writing Group");
                         group = scnr.nextLine();
                         queryWritingGroups(conn, group);
                         break;
@@ -535,7 +548,7 @@ public class CECS323JavaTermProject {
                         break;
                         
                     case 4: //query specific publisher
-                        System.out.println("Please enter the name of the publisher");
+                        System.out.println("\nPlease enter the name of the publisher");
                         publisher = scnr.nextLine();
                         queryPublisherData(conn, publisher);
                         break;
@@ -545,20 +558,21 @@ public class CECS323JavaTermProject {
                         break;
                     
                     case 6: //query specific book
-                                                
+                        System.out.println("\nQuery a specific book");                        
                         //enter publisher first, check if its a valid publisher
-                        System.out.println("Enter publisher: ");
+                        System.out.println("\nEnter publisher: ");
                         publisher = scnr.nextLine();
                         if (validatePublisher(conn, publisher)) {
                             //check if book title is valid or duplicate
-                            System.out.println("Please enter a book title: ");
+                            System.out.println("\nPlease enter a book title: ");
                             book = scnr.nextLine();
                             if (validateBook(conn, book)) {
                                 if (validateBook(conn, book, publisher)) {
                                     queryBookData(conn, book, publisher);
                                     break;
                                 } else {
-                                    System.out.printf("\nSorry a book by the title %s published by %s does not exist.", book, publisher);
+                                    System.out.printf("\nAlthough we do have %s recorded, it is not with the publisher %s.", book, publisher);
+                                    break;
                                 }
                             } else {
                                 System.out.printf("\nSorry, there is no book by that the title %s in our database.", book);
@@ -566,52 +580,54 @@ public class CECS323JavaTermProject {
                             }
                             
                         } else {
-                            System.out.println("Sorry that publisher isn't in our records. Please record that Publisher first.");
+                            System.out.println("\nSorry that publisher isn't in our records. Please record that Publisher first.");
                             break;
                         }
                         
                     case 7: //insert a book
-                        System.out.println("Please enter the name of the publisher: ");
+                        System.out.println("\nInsert a new book");
+                        System.out.println("\nPlease enter the name of the publisher: ");
                         publisher = scnr.nextLine();
                         if (validatePublisher(conn, publisher)) {
-                            System.out.println("Please enter the Writing Group name: ");
+                            System.out.println("\nPlease enter the Writing Group name: ");
                             group = scnr.nextLine();
                             if (validateGroup(conn, group)) {
-                                System.out.println("Please enter the book title: ");
+                                System.out.println("\nPlease enter the book title: ");
                                 book = scnr.nextLine();
                                 insertBookData(conn, scnr, book, publisher, group);
                                 break;
                             } else {
-                                System.out.println("Sorry, that Writing Group does not exist. Please record the Writing Group first.");
+                                System.out.println("\nSorry, that Writing Group does not exist. Please record the Writing Group first.");
                                 break;
                             }
                         } else {
-                            System.out.println("Sorry, that publisher has not been recorded yet. Please insert that particular publisher first before attempting to record their published work.");
+                            System.out.println("\nSorry, that publisher has not been recorded yet. Please insert that particular publisher first before attempting to record their published work.");
                             break;
                         }
                     case 8: //insert a new publisher, updating old one
-                        System.out.println("Please enter the name of the OLD publisher: ");
+                        System.out.println("Insert a new publisher");
+                        System.out.println("\nPlease enter the name of the OLD publisher: ");
                         String oldpublisher = scnr.nextLine();
                         if (validatePublisher(conn, oldpublisher)) { //if old publisher is in database, continue
-                            System.out.println("Please enter the name of the NEW publisher to be inserted: ");
+                            System.out.println("\nPlease enter the name of the NEW publisher to be inserted: ");
                             publisher = scnr.nextLine();
                             if (!validatePublisher(conn, publisher)) { //checking if new publisher is in database. if it is not, we go ahead, otherwise, its a duplicate
                                 insertPublisher(conn, scnr, publisher, oldpublisher);
                                 break;
                             } else {
-                                System.out.println("Sorry, that publisher is already in our database.");
+                                System.out.println("\nSorry, that publisher is already in our database.");
                                 break;
                             }
                         } else {
-                            System.out.println("Sorry, that publisher is not in our database!");
+                            System.out.println("\nSorry, that publisher is not in our database!");
                             break;
                         }
                     
                     case 9:
-                        System.out.println("First enter the publisher of the book you would like to remove: ");
+                        System.out.println("\nFirst enter the publisher of the book you would like to remove: ");
                         publisher = scnr.nextLine();
                         if (validatePublisher(conn, publisher)) {
-                            System.out.println("Please enter the name of the book you wish to remove: ");
+                            System.out.println("\nPlease enter the name of the book you wish to remove: ");
                             book = scnr.nextLine();
                             if (removeBook(conn, book, publisher)) {
                                 System.out.printf("\nThe book %s published by %s has been successfully deleted!", book, publisher);
@@ -621,16 +637,16 @@ public class CECS323JavaTermProject {
                             }
                             
                         } else {
-                            System.out.println("Unfortunately that publisher is not in our database.");
+                            System.out.println("\nUnfortunately that publisher is not in our database.");
                             break;
                         }
                     case 10: 
-                        System.out.println("Shutting down.");
+                        System.out.println("\nShutting down.");
                         input = false;
                         break;
                         
                     default: 
-                        System.out.println("Invalid input, please enter one of the menu choices as an integer");
+                        System.out.println("\nInvalid input, please enter one of the menu choices as an integer");
                     
 
                 }
