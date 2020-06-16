@@ -309,7 +309,7 @@ public class CECS323JavaTermProject {
                         pstmt.executeUpdate();
                         System.out.printf("\nSuccessfully deleted the book %s published by %s from our records!", book, publisher);
                     } else {
-                        
+                        System.out.printf("Although a book by the title of %s exists in our records, it is not recorded under %s's IP", book, publisher);
                     }
                 }
                 
