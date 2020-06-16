@@ -308,6 +308,22 @@ public class CECS323JavaTermProject {
         
     }
     
+    
+    public static boolean validateBook(Connection conn, String book) throws SQLException {
+        String stmt = "SELECT COUNT(*) AS COUNT FROM Books WHERE bookTitle = ?";
+        
+        PreparedStatement pstmt = conn.prepareStatement(stmt);
+        pstmt.setString(1, book);
+        ResultSet rs = pstmt.executeQuery();
+        if (rs.next()) {
+            int count = rs.getInt("COUNT");
+            if (count==1)
+                return true;
+            else
+                return false;
+        }
+        return false;
+    }
     public static boolean validateBook(Connection conn, String book, String publisher) throws SQLException {
         String stmt = "SELECT COUNT(*) AS COUNT FROM Books WHERE bookTitle = ? and publisherName = ?";
         PreparedStatement pstmt = conn.prepareStatement(stmt);
@@ -503,6 +519,7 @@ public class CECS323JavaTermProject {
                 scnr.nextLine(); //handles the carriage return bug of scanner
                 switch (choice) {
                     case 1: //list all groups
+                        System.out.println("\nListing all writing groups...");
                         queryWritingGroups(conn);
                         break;
                         
@@ -513,6 +530,7 @@ public class CECS323JavaTermProject {
                         break;
                         
                     case 3: //list all publishers
+                        System.out.println("\nListing all publishers");
                         queryPublisherData(conn);
                         break;
                         
@@ -522,6 +540,7 @@ public class CECS323JavaTermProject {
                         queryPublisherData(conn, publisher);
                         break;
                     case 5: //list all books
+                        System.out.println("\nListing all books");
                         queryBookData(conn);
                         break;
                     
@@ -534,11 +553,15 @@ public class CECS323JavaTermProject {
                             //check if book title is valid or duplicate
                             System.out.println("Please enter a book title: ");
                             book = scnr.nextLine();
-                            if (validateBook(conn, book, publisher)) {
-                                queryBookData(conn, book, publisher);
-                                break;
+                            if (validateBook(conn, book)) {
+                                if (validateBook(conn, book, publisher)) {
+                                    queryBookData(conn, book, publisher);
+                                    break;
+                                } else {
+                                    System.out.printf("\nSorry a book by the title %s published by %s does not exist.", book, publisher);
+                                }
                             } else {
-                                System.out.printf("Sorry, a book by the title of %s published by %s does not exist in our database.", book, publisher);
+                                System.out.printf("\nSorry, there is no book by that the title %s in our database.", book);
                                 break;
                             }
                             
