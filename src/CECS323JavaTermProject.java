@@ -629,15 +629,10 @@ public class CECS323JavaTermProject {
                         if (validatePublisher(conn, publisher)) {
                             System.out.println("\nPlease enter the name of the book you wish to remove: ");
                             book = scnr.nextLine();
-                            if (removeBook(conn, book, publisher)) {
-                                System.out.printf("\nThe book %s published by %s has been successfully deleted!", book, publisher);
-                                break;
-                            } else {
-                                System.out.printf("\nSorry, we have no records of %s, published by %s in our database.", book, publisher);
-                            }
-                            
+                            removeBook(conn, book, publisher);
+                            break;
                         } else {
-                            System.out.println("\nUnfortunately that publisher is not in our database.");
+                            System.out.printf("\nSorry, there is no publisher by the name of %s in our records.", publisher);
                             break;
                         }
                     case 10: 
